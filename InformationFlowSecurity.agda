@@ -28,10 +28,23 @@ s₀ $c = undef
 
 -- <<module>> language syntax
 data lexp : Set where
-
-data rexp : Set where
+  lvar : var → lexp
 
 data bexp : Set where
+  b-const : Bool → bexp
+  bvar : var → bexp
+  b-not : bexp → bexp
+  b-or : bexp → bexp → bexp
+  b-and : bexp → bexp → bexp
+
+data nexp : Set where
+  n-const : ℕ → nexp
+  n-var : var → nexp
+  n-add : nexp → nexp → nexp
+
+data rexp : Set where
+ rbexp : bexp → rexp
+ rnexp : nexp → rexp 
 
 data stmt : Set where
 --  entry : stmt
@@ -39,11 +52,11 @@ data stmt : Set where
   skip : stmt
   _:=_ : lexp → rexp → stmt
   if_then_else_ : bexp → stmt → stmt → stmt
-  for_then : bexp → stmt → stmt
+  for_then_ : bexp → stmt → stmt
 
 -- <<user>> define a program
 program : stmt
-program = skip
+program = ( lvar $a := rnexp (n-const 2) ) ⍮ (lvar $b := rbexp (b-const false) )
 
 -- <<module>> sec-τ constructor 
 data sec_ :  ℕ → Set where
@@ -71,14 +84,3 @@ data _<:τ_ : {l₁ l₂ : ℕ} → sec l₁ → sec l₂ → Set where
 infix 4 _<:τ_
 
 -- τ-base : (m n) → sec m → sec n → m n  
-
-
-
-
-
-
-
-
-
-
-
