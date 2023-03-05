@@ -116,8 +116,9 @@ secₛₜ : ↦ℓₛ → stmt → ℕ̃
 secₛₜ secᵥ (st₁ ⍮ st₂) = secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ skip = ⊤
 -- we should only keep the valid level, the valid level must be the greatest one
+-- do not worry about the valid one, it will be rejected early.
 secₛₜ secᵥ (x := e) = n≤⊤ (secₗₑ secᵥ x ⊔ secᵣₑ secᵥ e)
--- a valid if, its valid level must be the lowest one
+-- a valid 'if' or 'while', its valid level must be the lowest one
 secₛₜ secᵥ (if e then st₁ else st₂) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ (while e loop st) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st
 
@@ -167,3 +168,7 @@ postulate
 -- It is just a assumption
 _[≡_]_ : state → ℓₛ → state → Set
 s₁ [≡ l ] s₂ = ∀ {v : var} → secᵥ' v ≤ l → s₁ v ≡ s₂ v
+
+
+-- The final theorem is  
+-- s₁ [≡ l ] s₂ → (st : stmt) → (secᵥ' : ↦ℓₛ) → accept st secᵥ' ≡ true → s₁⟦st⟧ [≡ l ] s₂⟦st⟧      
