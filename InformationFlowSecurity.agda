@@ -180,6 +180,37 @@ _[_↦_] : state → var → value → state
 ... | $c | $c = v
 ... | _  | _  = s x
 
+⟦_⟧ₙₑ : bexp → state → value
+⟦ b-const e ⟧ₙₑ s = {!   !}
+⟦ b-var e ⟧ₙₑ s = {!   !}
+⟦ b-not e ⟧ₙₑ s = {!   !}
+⟦ b-or e₁ e₂ ⟧ₙₑ s = {!   !}
+⟦ b-and e₁ e₂ ⟧ₙₑ s = {!   !}
+⟦ b-less e₁ e₂ ⟧ₙₑ s = {!   !}
+⟦ b-eq e₁ e₂ ⟧ₙₑ s = {!   !}
+
+⟦_⟧ₒₑ : bexp → state → value
+⟦ b-const e ⟧ₒₑ s = {!   !}
+⟦ b-var e ⟧ₒₑ s = {!   !}
+⟦ b-not e ⟧ₒₑ s = {!   !}
+⟦ b-or e₁ e₂ ⟧ₒₑ s = {!   !}
+⟦ b-and e₁ e₂ ⟧ₒₑ s = {!   !}
+⟦ b-less e₁ e₂ ⟧ₒₑ s = {!   !}
+⟦ b-eq e₁ e₂ ⟧ₒₑ s = {!   !}
+
+⟦_⟧ᵣₑ : rexp → state → value
+⟦ rbexp (b-const e) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-var e) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-not e) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-or e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-and e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-less e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rbexp (b-eq e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rnexp (n-const e) ⟧ᵣₑ s = {!   !}
+⟦ rnexp (n-var e) ⟧ᵣₑ s = {!   !}
+⟦ rnexp (n-add e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rnexp (n-sub e₁ e₂) ⟧ᵣₑ s = {!   !}
+⟦ rnexp (n-mul e₁ e₂) ⟧ᵣₑ s = {!   !}
 
 [_]⇒ₛₜ_ : state → stmt → state
 [ s ]⇒ₛₜ (st₁ ⍮ st₂) = [ [ s ]⇒ₛₜ st₁ ]⇒ₛₜ st₂
