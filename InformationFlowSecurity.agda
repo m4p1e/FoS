@@ -109,29 +109,41 @@ n≤⊤ x ⊓ᵍ n≤⊤ y = n≤⊤ (x ⊓ y)
 
 infixl 7 _⊓ᵍ_
 
+_≤ᵍ_ : ℕ̃ → ℕ̃ → Bool
+⊤ ≤ᵍ ⊤ = true
+⊤ ≤ᵍ n≤⊤ x = false
+n≤⊤ x ≤ᵍ ⊤ = true
+n≤⊤ x₁ ≤ᵍ n≤⊤ x₂ = x₁ ≤ᵇ x₂
+
+infix 4 _≤ᵍ_
+
 -- ℕ̃ℕ : ℕ̃  → ℕ 
 
 -- CMD security level : st = ⋀ stᵢ
+-- we should only keep the valid level, the valid level must be the greatest one.
+-- do not worry about the invalid one, since it will be rejected early.
+-- a valid 'if' or 'while', its valid level must be the lowest one
 secₛₜ : ↦ℓₛ → stmt → ℕ̃
 secₛₜ secᵥ (st₁ ⍮ st₂) = secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ skip = ⊤
--- we should only keep the valid level, the valid level must be the greatest one
--- do not worry about the valid one, it will be rejected early.
 secₛₜ secᵥ (x := e) = n≤⊤ (secₗₑ secᵥ x ⊔ secᵣₑ secᵥ e)
--- a valid 'if' or 'while', its valid level must be the lowest one
 secₛₜ secᵥ (if e then st₁ else st₂) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ (while e loop st) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st
 
+-- rules: 
+-- 1. assign : high ← low 
+-- 2. conditional branch : if(c ← low){ st ← high} and (accept st secᵥ ≡ true) 
+-- 3. otherwise rejects.
 accept : stmt → ↦ℓₛ → Bool
 accept (st₁ ⍮ st₂) secᵥ = accept st₁ secᵥ ∧ accept st₂ secᵥ
 accept skip secᵥ = true
 accept (x := e) secᵥ = secᵣₑ secᵥ e ≤ᵇ secₗₑ secᵥ x
-accept (if e then st₁ else st₂) secᵥ with secₒₑ secᵥ e | secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂ 
-... | n₁ | ⊤ =  true
-... | n₁ | n≤⊤ x = n₁ ≤ᵇ x
-accept (while e loop st) secᵥ with secₒₑ secᵥ e | secₛₜ secᵥ st 
-... | n₁ | ⊤ = true
-... | n₁ | n≤⊤ x = n₁ ≤ᵇ x
+accept (if e then st₁ else st₂) secᵥ with accept st₁ secᵥ | accept st₂ secᵥ
+... | true | true = n≤⊤ (secₒₑ secᵥ e) ≤ᵍ secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
+... | _  | _  = false
+accept (while e loop st) secᵥ with accept st secᵥ
+... | true = n≤⊤ (secₒₑ secᵥ e) ≤ᵍ secₛₜ secᵥ st
+... | _ = false
 
 secᵥ⁰ : ↦ℓₛ
 secᵥ⁰ $a = 1
@@ -145,19 +157,40 @@ p₁r = accept p₁ secᵥ⁰
 ?p₁r : p₁r ≡ true 
 ?p₁r = refl
 
---- ex2 a = 1; a = b
+-- ex2 a = 1; a = b
 p₂ : stmt
 p₂ = ( lvar $a := rnexp (n-const 2) ) ⍮ (lvar $a := rnexp (n-var $b) )
 p₂r = accept p₂ secᵥ⁰ 
 ?p₂r : not p₂r ≡ true 
 ?p₂r = refl
 
---- ex3 if(b) {$a = 2}
+-- ex3 if(b) {$a = $b}
 p₃ : stmt
-p₃ = if (b-var $b) then (lvar $a := rnexp (n-const 1)) else (skip)
+p₃ = if (b-var $b) then (lvar $a := rnexp (n-var $b)) else (skip)
 p₃r = accept p₃ secᵥ⁰ 
 ?p₃r : not p₃r ≡ true 
 ?p₃r = refl
+
+
+-- TODO: infinite variables.
+_[_↦_] : state → var → value → state
+(s [ x₁ ↦ v ]) x with x₁ | x
+... | $a | $a = v
+... | $b | $b = v
+... | $c | $c = v
+... | _  | _  = s x
+
+
+[_]⇒ₛₜ_ : state → stmt → state
+[ s ]⇒ₛₜ (st₁ ⍮ st₂) = [ [ s ]⇒ₛₜ st₁ ]⇒ₛₜ st₂
+[ s ]⇒ₛₜ skip = s
+[ s ]⇒ₛₜ (lvar x := e) = s [ x ↦ {!   !} ]
+[ s ]⇒ₛₜ (if e then st₁ else st₂) = {!   !}
+[ s ]⇒ₛₜ (while e loop st) = {!   !} 
+-- operational semantics
+-- data [_]⇒_[] : state → stmt → state → Set where
+--  ⇒skip : (s : state) → stmt → [s] => st [s]  
+
 
 postulate
   secᵥ' : ↦ℓₛ
