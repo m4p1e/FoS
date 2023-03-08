@@ -55,11 +55,11 @@ data rexp : Set where
   rnexp   : nexp → rexp
 
 data stmt : Set where
-  _⍮_           : stmt → stmt → stmt
   skip          : stmt
   _:=_          : lexp → rexp → stmt
   if_then_else_ : bexp → stmt → stmt → stmt
   while_loop_   : bexp → stmt → stmt
+  _⍮_           : stmt → stmt → stmt
 
 -- <<user>> define a program
 -- program : stmt
@@ -124,18 +124,17 @@ infix 4 _≤ᵍ_
 -- do not worry about the invalid one, since it will be rejected early.
 -- a valid 'if' or 'while', its valid level must be the lowest one
 secₛₜ : ↦ℓₛ → stmt → ℕ̃
-secₛₜ secᵥ (st₁ ⍮ st₂) = secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ skip = ⊤
 secₛₜ secᵥ (x := e) = n≤⊤ (secₗₑ secᵥ x ⊔ secᵣₑ secᵥ e)
 secₛₜ secᵥ (if e then st₁ else st₂) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 secₛₜ secᵥ (while e loop st) = n≤⊤ (secₒₑ secᵥ e) ⊓ᵍ secₛₜ secᵥ st
+secₛₜ secᵥ (st₁ ⍮ st₂) = secₛₜ secᵥ st₁ ⊓ᵍ secₛₜ secᵥ st₂
 
 -- rules: 
 -- 1. assign : high ← low 
 -- 2. conditional branch : if(c ← low){ st ← high} and (accept st secᵥ ≡ true) 
 -- 3. otherwise rejects.
 accept : stmt → ↦ℓₛ → Bool
-accept (st₁ ⍮ st₂) secᵥ = accept st₁ secᵥ ∧ accept st₂ secᵥ
 accept skip secᵥ = true
 accept (x := e) secᵥ = secᵣₑ secᵥ e ≤ᵇ secₗₑ secᵥ x
 accept (if e then st₁ else st₂) secᵥ with accept st₁ secᵥ | accept st₂ secᵥ
@@ -144,6 +143,7 @@ accept (if e then st₁ else st₂) secᵥ with accept st₁ secᵥ | accept st�
 accept (while e loop st) secᵥ with accept st secᵥ
 ... | true = n≤⊤ (secₒₑ secᵥ e) ≤ᵍ secₛₜ secᵥ st
 ... | _ = false
+accept (st₁ ⍮ st₂) secᵥ = accept st₁ secᵥ ∧ accept st₂ secᵥ
 
 secᵥ⁰ : ↦ℓₛ
 secᵥ⁰ $a = 1
@@ -212,16 +212,54 @@ _[_↦_] : state → var → value → state
 ⟦ rnexp (n-sub e₁ e₂) ⟧ᵣₑ s = {!   !}
 ⟦ rnexp (n-mul e₁ e₂) ⟧ᵣₑ s = {!   !}
 
-[_]⇒ₛₜ_ : state → stmt → state
-[ s ]⇒ₛₜ (st₁ ⍮ st₂) = [ [ s ]⇒ₛₜ st₁ ]⇒ₛₜ st₂
-[ s ]⇒ₛₜ skip = s
-[ s ]⇒ₛₜ (lvar x := e) = s [ x ↦ {!   !} ]
-[ s ]⇒ₛₜ (if e then st₁ else st₂) = {!   !}
-[ s ]⇒ₛₜ (while e loop st) = {!   !} 
--- operational semantics
--- data [_]⇒_[] : state → stmt → state → Set where
---  ⇒skip : (s : state) → stmt → [s] => st [s]  
+-- [_]⇒ₛₜ_ : state → stmt → state
+-- [ s ]⇒ₛₜ (st₁ ⍮ st₂) = [ [ s ]⇒ₛₜ st₁ ]⇒ₛₜ st₂
+-- [ s ]⇒ₛₜ skip = s
+-- [ s ]⇒ₛₜ (lvar x := e) = s [ x ↦ {!   !} ]
+-- [ s ]⇒ₛₜ (if e then st₁ else st₂) = {!   !}
+-- [ s ]⇒ₛₜ (while e loop st) = {!   !}
 
+
+-- operational semantics
+data ❴_❵_❴_❵ : state → stmt → state → Set where
+  ❴p❵skip❴q❵ : 
+        (s : state) → (st : stmt) 
+        → st ≡ skip 
+        → ❴ s ❵ st ❴ s ❵
+  ❴p❵assign❴q❵ : {x : var} {e : rexp} 
+        → (s : state) → (st : stmt) 
+        → st ≡ lvar x := e 
+        → ❴ s ❵ st ❴ s [ x ↦ (⟦ e ⟧ᵣₑ s) ] ❵
+  ❴p❵if-true❴q❵ : {e : bexp} {st₁ st₂ : stmt} {s' : state}        
+        → (s : state) → (st : stmt)
+        → st ≡ if e then st₁ else st₂
+        → ⟦ e ⟧ₒₑ s ≡ valₒ true
+        → (❴p❵st₁❴q❵ : ❴ s ❵ st₁ ❴ s' ❵)
+        → ❴ s ❵ st ❴ s' ❵
+  ❴p❵if-false❴q❵ : {e : bexp} {st₁ st₂ : stmt} {s' : state}        
+        → (s : state) → (st : stmt)
+        → st ≡ if e then st₁ else st₂
+        → ⟦ e ⟧ₒₑ s ≡ valₒ false
+        → (❴p❵st₂❴q❵ : ❴ s ❵ st₂ ❴ s' ❵)
+        → ❴ s ❵ st ❴ s' ❵
+  ❴p❵while-false❴q❵ : {e : bexp} {st₁ : stmt}
+        → (s : state) → (st : stmt)
+        → st ≡ while e loop st₁
+        → ⟦ e ⟧ₒₑ s ≡ valₒ false
+        → ❴ s ❵ st ❴ s ❵
+  ❴p❵while-true❴q❵ : {e : bexp} {st₁ : stmt} {s₁ s₂ : state}
+        → (s : state) → (st : stmt)
+        → st ≡ while e loop st₁
+        → ⟦ e ⟧ₒₑ s ≡ valₒ true
+        → (❴p❵st₁❴q❵ : ❴ s ❵ st₁ ❴ s₁ ❵)
+        → (❴p❵st₁❴q❵ : ❴ s₁ ❵ st ❴ s₂ ❵)
+        → ❴ s ❵ st ❴ s₂ ❵
+  ❴p❵seq❴q❵ : {e : bexp} {st₁ st₂ : stmt} {s₁ s₂ : state}
+        → (s : state) → (st : stmt)
+        → st ≡ st₁ ⍮ st₂
+        → (❴p❵st₁❴q❵ : ❴ s ❵ st₁ ❴ s₁ ❵)
+        → (❴p❵st₂❴q❵ : ❴ s ❵ st₂ ❴ s₂ ❵)
+        → ❴ s ❵ st ❴ s₂ ❵    
 
 postulate
   secᵥ' : ↦ℓₛ
