@@ -411,20 +411,16 @@ theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂
   (❴ s₂ ❵assign❴ s₂' ❵ c₂) 
   {v} vs≤l with secᵥ' x ≤ᵇ l
 ... | false = (safe-write2 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {⟦ e ⟧ᵣₑ s₁} {⟦ e ⟧ᵣₑ s₂} s₁=ₗs₂ (¬≤ᵇ-elim {secᵥ' x} {l} _) refl refl c₁ c₂) vs≤l
-
 -- (≤ᵇ-elim {secᵥ' x} {l} _) : secᵥ' x < l 
 -- (≤-trans (acceptAssignThenNoInterfere {x} {e} acc) (≤ᵇ-elim {secᵥ' x} {l} _)) : secᵣₑ secᵥ' e  ≤ l
 ... | true  = (safe-write1 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {⟦ e ⟧ᵣₑ s₁} {⟦ e ⟧ᵣₑ s₂} s₁=ₗs₂ 
               (≤ᵇ-elim {secᵥ' x} {l} _) 
               (≤-trans (acceptAssignThenNoInterfere {x} {e} acc) (≤ᵇ-elim {secᵥ' x} {l} _))  
               refl refl c₁ c₂) vs≤l
-
-
--- (anti-mono-veq (≤ᵇ-elim (refl)) s₁=ₛs₂) : s₁ [≡ secᵥ' x] s₂ 
--- s₁' [≡ secᵥ' x] s₂'
-
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(if _ then _ else _) acc (❴ .s₁ ❵if-true❴ .s₁' ❵ x x₁) y = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(if _ then _ else _) acc (❴ .s₁ ❵if-false❴ .s₁' ❵ x x₁) y = {!   !}
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ s₁[st]s₁') (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ s₂[st]s₂') = {!   !}
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ s₁[st]s₁') (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ s₂[st]s₂') = {!   !}
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-false❴ s₁' ❵ e=false₁ s₁[st]s₁) (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ s₂[st]s₂') = {!   !}
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-false❴ s₁' ❵ e=false₁ s₁[st]s₁) (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ s₂[st]s₂') = {!   !}
 theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(while _ loop _) acc (❴ .s₁ ❵while-false❴ .s₁' ❵ x x₁) y = {!   !}
 theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(while _ loop _) acc (❴ .s₁ ❵while-true❴ .s₁' ❵ x x₁ x₂) y = {!   !}
 theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(_ ⍮ _) acc (❴ .s₁ ❵seq❴ .s₁' ❵ x x₁) y = {!   !}
