@@ -4,7 +4,7 @@ open import Data.Nat using (ℕ; zero; suc; _+_ ; _∸_; _*_; _≤_; _≤ᵇ_; _
 open import Data.Nat.Properties using (≤-trans)
 open import Data.String using (String; _≟_; _==_)
 open import Data.Bool using (Bool; true; false; not; _∧_ ; _∨_)
-open import Data.Product using (_×_; _,_)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; refl; sym; cong; cong-app; trans)
@@ -111,7 +111,61 @@ _≤ᵍ_ : ℕ̃ → ℕ̃ → Bool
 n≤⊤ x ≤ᵍ ⊤ = true
 n≤⊤ x₁ ≤ᵍ n≤⊤ x₂ = x₁ ≤ᵇ x₂
 
-infix 4 _≤ᵍ_
+infix 5 _≤ᵍ_
+
+n<1+n : {x : ℕ} → (x <ᵇ suc x) ≡ true
+n<1+n {zero} = refl
+n<1+n {suc x} = n<1+n {x}
+
+x⊓y<x+1 : {x y : ℕ} → (x ⊓ y <ᵇ suc x) ≡ true
+x⊓y<x+1 {zero} {y} = refl
+x⊓y<x+1 {suc x} {zero} = refl
+x⊓y<x+1 {suc x} {suc y} = x⊓y<x+1 {x}
+
+x⊓y<y+1 : {x y : ℕ} → (x ⊓ y <ᵇ suc y) ≡ true
+x⊓y<y+1 {zero} {zero} = refl
+x⊓y<y+1 {suc x} {zero} = refl
+x⊓y<y+1 {zero} {suc y} = refl
+x⊓y<y+1 {suc x} {suc y} = x⊓y<y+1 {x} {y} 
+
+x⊓y≤x : {x y : ℕ} → ((x ⊓ y) ≤ᵇ x) ≡ true
+x⊓y≤x {zero} {y} = refl
+x⊓y≤x {suc x} {zero} = refl
+x⊓y≤x {suc x} {suc y} = x⊓y<x+1 {x} 
+
+x⊓y≤y : {x y : ℕ} → ((x ⊓ y) ≤ᵇ y) ≡ true
+x⊓y≤y {zero} {zero} = refl
+x⊓y≤y {suc x} {zero} = refl
+x⊓y≤y {zero} {suc y} = refl
+x⊓y≤y {suc x} {suc y} = x⊓y<y+1 {x} {y}
+
+≤ᵇ-reflexive : {x : ℕ} → x ≡ x → (x ≤ᵇ x) ≡ true   
+≤ᵇ-reflexive {zero} refl = refl
+≤ᵇ-reflexive {suc x} refl = n<1+n {x}
+
+x⊓ᵍy≤x : {x y : ℕ̃} → (x ⊓ᵍ y) ≤ᵍ x ≡ true
+x⊓ᵍy≤x {⊤} {y} with ⊤ ⊓ᵍ y
+... | ⊤ = refl
+... | n≤⊤ x = refl
+x⊓ᵍy≤x {n≤⊤ x} {⊤} = ≤ᵇ-reflexive {x} refl
+x⊓ᵍy≤x {n≤⊤ x} {n≤⊤ _} = x⊓y≤x {x} 
+
+x⊓ᵍy≤y : {x y : ℕ̃} → (x ⊓ᵍ y) ≤ᵍ y ≡ true
+x⊓ᵍy≤y {x} {⊤} with x ⊓ᵍ ⊤ 
+... | ⊤ = refl
+... | n≤⊤ x₁ = refl
+x⊓ᵍy≤y {⊤} {n≤⊤ x} = ≤ᵇ-reflexive {x} refl
+x⊓ᵍy≤y {n≤⊤ x} {n≤⊤ y} = x⊓y≤y {x} {y}
+
+≤ᵍ-trans : {x y z : ℕ̃} → x ≤ᵍ y ≡ true → y ≤ᵍ z ≡ true → x ≤ᵍ z ≡ true   
+≤ᵍ-trans {x} {y} {z} x≤ᵍy y≤ᵍz = {!   !}
+
+x≤y⊓ᵍz₁ : {x y z : ℕ̃} → x ≤ᵍ (y ⊓ᵍ z) ≡ true → x ≤ᵍ y ≡ true      
+x≤y⊓ᵍz₁ {x} {y} {z} x≤y⊓ᵍz = ≤ᵍ-trans {x} {y ⊓ᵍ z} {y} x≤y⊓ᵍz (x⊓ᵍy≤x {y} {z})
+
+x≤y⊓ᵍz₂ : {x y z : ℕ̃} → x ≤ᵍ (y ⊓ᵍ z) ≡ true → x ≤ᵍ z ≡ true      
+x≤y⊓ᵍz₂ {x} {y} {z} x≤y⊓ᵍz = ≤ᵍ-trans {x} {y ⊓ᵍ z} {z} x≤y⊓ᵍz (x⊓ᵍy≤y {y} {z})
+
 
 -- ℕ̃ℕ : ℕ̃  → ℕ 
 
@@ -268,13 +322,13 @@ data ❴_❵_❴_❵ : state → stmt → state → Set where
         → (s  : state)
         → (s' : state)      
         → ⟦ e ⟧ₒₑ s ≡ valₒ false
-        → s ≡ s'
+        → ❴ s ❵ st₂ ❴ s' ❵
         → ❴ s ❵ if e then st₁ else st₂ ❴ s' ❵
   ❴_❵while-false❴_❵ : {e : bexp} {st : stmt}
         → (s  : state) 
         → (s' : state)
-        → s ≡ s'
         → ⟦ e ⟧ₒₑ s ≡ valₒ false
+        → s ≡ s'
         → ❴ s ❵ while e loop st ❴ s' ❵
   ❴_❵while-true❴_❵ : {e : bexp} {st : stmt} {s₁ : state}
         → (s  : state) 
@@ -301,6 +355,12 @@ _[≡_]_ : state → ℓₛ → state → Set
 s₁ [≡ l ] s₂ = ∀ {v : var} → secᵥ' v ≤ l → s₁ v ≡ s₂ v
 
 infix 4 _[≡_]_
+
+s[≡l]s'-trans : {l : ℕ} {s₁ s₂ s₃ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₃ → s₁ [≡ l ] s₃  
+s[≡l]s'-trans s₁[≡l]s₂ s₁[≡l]s₃ = {!   !}
+
+s[≡l]s'-sym : {l : ℕ} {s₁ s₂ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₁
+s[≡l]s'-sym = {!   !}
 
 -- anti monotonicity of level
 anti-mono-veq : {l₁ l₂ : ℕ} {s₁ s₂ : state} → l₂ ≤ l₁ →  s₁ [≡ l₁ ] s₂ → s₁ [≡ l₂ ] s₂  
@@ -351,7 +411,7 @@ safe-write1 : {l : ℕ} {s₁ s₂ : state} {s₁' s₂' : state} {x : var} {e :
 
 safe-write1 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ x≤l e≤l ve₁ ve₂ c₁ c₂ {y} y≤l with x == y 
 ... | false rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} _ _ | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} _ _ = s₁=ₗs₂ y≤l
-... | true rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} _ _ | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} _ _ = safe-evalᵣₑ {l} {s₁} {s₂} {e} {_} {_} s₁=ₗs₂ _ _ _
+... | true rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} _ _ | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} _ _ = safe-evalᵣₑ {l} {s₁} {s₂} {e} {_} {_} s₁=ₗs₂ _ _ _  
 
 postulate
   l-neq : {x : var} {y : var} → secᵥ' y < secᵥ' x → (x == y) ≡ false
@@ -368,7 +428,7 @@ safe-write2 : {l : ℕ} {s₁ s₂ : state} {s₁' s₂' : state} {x : var} {e :
             → s₁' [≡ l ] s₂'
             
 safe-write2 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ l<x ve₁ ve₂ c₁ c₂ {y} y≤l 
-  rewrite l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x) | s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} _ _ | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} _ _ = s₁=ₗs₂ y≤l
+  rewrite l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x) | s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} _ _ | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} _ _ = s₁=ₗs₂ y≤l  
 
 postulate
   ¬≤ᵇ-elim : {a b : ℕ } → (a ≤ᵇ b) ≡ false → b < a
@@ -382,9 +442,69 @@ postulate
 ≤ᵇ-elim {zero} {b} c = z≤n
 ≤ᵇ-elim {suc a} {b} c = <ᵇ-elim c
 
+∧-elim₁ : {a b : Bool} → a ∧ b ≡ true → a ≡ true
+∧-elim₁ {true} {b} a∧b=true = refl
+
+∧-elim₂ : {a b : Bool} → a ∧ b ≡ true → b ≡ true
+∧-elim₂ {true} {true} a∧b=true = refl
+
 -- a ≤ᵇ b ≡ true  →  a ≤ b 
 acceptAssignThenNoInterfere : {x : var} {e : rexp} → accept (lvar x := e) secᵥ' ≡ true →  secᵣₑ secᵥ' e  ≤ secᵥ' x 
 acceptAssignThenNoInterfere c = ≤ᵇ-elim c
+
+-- accept (if e then st₁ else st₂) → accept st₁ × accept st₂
+accepIfThenNoInterfere₁ : {e : bexp} { st₁ st₂ : stmt} → accept (if e then st₁ else st₂) secᵥ' ≡ true → (accept st₁ secᵥ' ≡ true) × (accept st₂ secᵥ' ≡ true)
+accepIfThenNoInterfere₁ acc-if = {!   !}
+
+accepIfThenNoInterfere₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ} 
+                        → accept (if e then st₁ else st₂) secᵥ' ≡ true 
+                        → ⟦ e ⟧ₒₑ s₁ ≢ ⟦ e ⟧ₒₑ s₂ 
+                        → s₁ [≡ l ] s₂ 
+                        → l < secₒₑ secᵥ' e
+
+accepIfThenNoInterfere₂ acc-if s₁e≢s₂e s₁=ₗs₂ = {!   !}
+
+accpeWhileThenNoInterfere₁ : {e : bexp} {st : stmt} → accept (while e loop st) secᵥ' ≡ true → (accept st secᵥ' ≡ true)
+accpeWhileThenNoInterfere₁ acc-while = {!   !}
+
+accepSeqThenNoInterfere₁ : { st₁ st₂ : stmt} → accept (st₁ ⍮ st₂) secᵥ' ≡ true → accept st₁ secᵥ' ≡ true
+accepSeqThenNoInterfere₁ acc-seq = ∧-elim₁ acc-seq
+
+accepSeqThenNoInterfere₂ : { st₁ st₂ : stmt} → accept (st₁ ⍮ st₂) secᵥ' ≡ true → accept st₂ secᵥ' ≡ true
+accepSeqThenNoInterfere₂ acc-seq = ∧-elim₂ acc-seq
+
+
+-- Evaluation of high level stmt will not interfere visible area
+lemma₁ : {l : ℕ}
+          → (s s' : state)
+          → (st : stmt)
+          → (secₛₜ secᵥ' st ≤ᵍ n≤⊤ l) ≡ false
+          → ❴ s ❵ st ❴ s' ❵
+          → s [≡ l ] s'
+
+lemma₁ = {!   !}
+
+corollary₁ : {l : ℕ}
+          → (s₁ : state) → (s₁' : state)
+          → (s₂ : state) → (s₂' : state)
+          → s₁ [≡ l ] s₂ 
+          → (st₁ : stmt)
+          → (st₂ : stmt)
+          → (secₛₜ secᵥ' st₁ ≤ᵍ n≤⊤ l) ≡ false
+          → (secₛₜ secᵥ' st₂ ≤ᵍ n≤⊤ l) ≡ false
+          → ❴ s₁ ❵ st₁ ❴ s₁' ❵
+          → ❴ s₂ ❵ st₂ ❴ s₂' ❵
+          → s₁' [≡ l ] s₂'
+
+corollary₁ {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ st₁ st₂ l₁<l l₂<l c₁ c₂ 
+  = s[≡l]s'-trans {l} {s₁'} {s₂} {s₂'}( 
+      s[≡l]s'-trans {l} {s₁'} {s₁} {s₂} 
+      (s[≡l]s'-sym {l} {s₁} {s₁'} (lemma₁ {l} s₁ s₁' st₁ l₁<l c₁))
+      s₁=ₗs₂ 
+    ) (lemma₁ {l} s₂ s₂' st₂ l₂<l c₂)
+
+-- lemma₁ {l} s₁ s₁' st₁ l₁<l c₁ : s₁ [≡ l ] s₁'
+-- lemma₁ {l} s₂ s₂' st₂ l₂<l c₂ : s₂ [≡ l ] s₂'
 
 -- The final theorem 
 theorem : {l : ℕ}
@@ -417,11 +537,74 @@ theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂
               (≤-trans (acceptAssignThenNoInterfere {x} {e} acc) (≤ᵇ-elim {secᵥ' x} {l} _))  
               refl refl c₁ c₂)
 
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ c₁) (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ c₂) = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ c₁) (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ c₂) = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-false❴ s₁' ❵ e=false c₁) (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ c₂) = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ (if e then st₁ else st₂) acc (❴ s₁ ❵if-false❴ s₁' ❵ e=false c₁) (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ c₂) rewrite c₁ | c₂ = s₁=ₗs₂
+-- if-true and if-true or if-false and if-false, we have to induce the proof of (accept st₁) and (accept st₂) from (accept if).
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (if e then st₁ else st₂) acc 
+  (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ c₁) 
+  (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ c₂) 
+  = theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ st₁ (proj₁ (accepIfThenNoInterfere₁ {e} {st₁} {st₂} acc)) c₁ c₂
 
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(while _ loop _) acc (❴ .s₁ ❵while-false❴ .s₁' ❵ x x₁) y = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(while _ loop _) acc (❴ .s₁ ❵while-true❴ .s₁' ❵ x x₁ x₂) y = {!   !}
-theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ .(_ ⍮ _) acc (❴ .s₁ ❵seq❴ .s₁' ❵ x x₁) y = {!   !}
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂
+  (if e then st₁ else st₂) acc 
+  (❴ s₁ ❵if-false❴ s₁' ❵ e=false c₁) 
+  (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ c₂) 
+  = theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ st₂ (proj₂ (accepIfThenNoInterfere₁ {e} {st₁} {st₂} acc)) c₁ c₂
+
+
+-- if-true and if-false or if-false and if-true, we have to prove l < secᵥ' e   
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (if e then st₁ else st₂) acc 
+  (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ c₁) 
+  (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ c₂) 
+  = corollary₁ s₁ s₁' s₂ s₂' s₁=ₗs₂ st₁ st₂ _ _ c₁ c₂
+
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (if e then st₁ else st₂) acc 
+  (❴ s₁ ❵if-false❴ s₁' ❵ e=false₁ c₁) 
+  (❴ s₂ ❵if-true❴ s₂' ❵ e=true₂ c₂) 
+  = corollary₁ s₁ s₁' s₂ s₂' s₁=ₗs₂ st₂ st₁ _ _ c₁ c₂
+
+
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (while e loop st) acc 
+  (❴ s₁ ❵while-true❴ s₁' ❵ e=true₁ s₁⇒sₜ sₜ⇒s₁') 
+  (❴ s₂ ❵while-true❴ s₂' ❵ e=true₂ s₂⇒sₜ sₜ⇒s₂') 
+  = theorem _ s₁' _ s₂' (
+      theorem s₁ _ s₂ _ s₁=ₗs₂ st (accpeWhileThenNoInterfere₁ {e} {st} acc) s₁⇒sₜ s₂⇒sₜ
+    ) (while e loop st) acc sₜ⇒s₁' sₜ⇒s₂'
+
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (while e loop st) acc 
+  (❴ s₁ ❵while-false❴ s₁' ❵ e=false₁ s₁⇒s₁') 
+  (❴ s₂ ❵while-false❴ s₂' ❵ e=false₂ s₂⇒s₂') rewrite s₁⇒s₁' | s₂⇒s₂'
+  = s₁=ₗs₂
+
+theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (while e loop st) acc 
+  (❴ s₁ ❵while-true❴ s₁' ❵ e=true₁ s₁⇒sₜ sₜ⇒s₁')
+  (❴ s₂ ❵while-false❴ s₂' ❵ e=false₂ s₂⇒s₂') {v} v≤l rewrite s₂⇒s₂'
+  = trans 
+    (sym ((s[≡l]s'-trans {l} {s₁} {_} {s₁'} (lemma₁ {l} s₁ _ st _  s₁⇒sₜ) (lemma₁ {l} _ s₁' (while e loop st) _ sₜ⇒s₁')) {v} v≤l)) 
+    (s₁=ₗs₂ {v} v≤l)
+
+-- s₁=ₗs₂ {v} v≤l : s₁ v = s₂' v
+-- (s[≡l]s'-trans {l} {s₁} {_} {s₁'} (lemma₂ {l} s₁ _ st _  s₁⇒sₜ) (lemma₂ {l} _ s₁' (while e loop st) _ sₜ⇒s₁')) {v}  v≤l : s₁ v ≡ s₁' v
+
+theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (while e loop st) acc 
+  (❴ s₁ ❵while-false❴ s₁' ❵ e=false₁ s₁⇒s₁') 
+  (❴ s₂ ❵while-true❴ s₂' ❵ e=true₂ s₂⇒sₜ sₜ⇒s₂') {v} v≤l rewrite s₁⇒s₁'
+  = trans 
+    (s₁=ₗs₂ {v} v≤l) 
+    ((s[≡l]s'-trans {l} {s₂} {_} {s₂'} (lemma₁ {l} s₂ _ st _  s₂⇒sₜ) (lemma₁ {l} _ s₂' (while e loop st) _ sₜ⇒s₂')) {v} v≤l)
+
+-- s₁=ₗs₂ {v} v≤l : s₁' v ≡ s₂ v
+-- sym ((s[≡l]s'-trans {l} {s₂} {_} {s₂'} (lemma₂ {l} s₂ _ st _  s₂⇒sₜ) (lemma₂ {l} _ s₂' (while e loop st) _ sₜ⇒s₂')) {v}  v≤l) : s₂' v ≡ s₂ v
+
+theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
+  (st₁ ⍮ st₂) acc 
+  (❴ s₁ ❵seq❴ s₁' ❵ s₁⇒sₜ sₜ⇒s₁') 
+  (❴ s₂ ❵seq❴ s₂' ❵ s₂⇒sₜ sₜ⇒s₂') 
+  = theorem _ s₁' _ s₂' (
+      theorem s₁ _ s₂ _ s₁=ₗs₂ st₁ (accepSeqThenNoInterfere₁ {st₁} {st₂} acc) s₁⇒sₜ s₂⇒sₜ
+  ) st₂ ((accepSeqThenNoInterfere₂ {st₁} {st₂} acc)) sₜ⇒s₁' sₜ⇒s₂' 
