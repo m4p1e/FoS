@@ -321,10 +321,6 @@ postulate
   eval-notfalse→true : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ false → (⟦ e ⟧ₒₑ s) ≡ valₒ true
   eval-nottrue→false : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ true → (⟦ e ⟧ₒₑ s) ≡ valₒ false
 
-
-true→false : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ true → (⟦ e ⟧ₒₑ s) ≡ valₒ false  
-true→false {e} {s} notb=true = {!  !}
-
 -- operational semantics
 data ❴_❵_❴_❵ : state → stmt → state → Set where
   ❴_❵skip❴_❵ : 
@@ -490,6 +486,7 @@ safe-write3 {l} {s} {s'} {x} {e} {v} l<x ve c {y} y≤l rewrite l-neq (≤-<-tra
 
 postulate
   ¬≤ᵇ-elim : {a b : ℕ } → (a ≤ᵇ b) ≡ false → b < a
+  a<b∧b≤c⇒a<c : {a b : ℕ} {c : ℕ̃} → (b ≤ᵇ a) ≡ false → n≤⊤ b ≤ᵍ c ≡ true → c ≤ᵍ n≤⊤ a ≡ false 
 
 -- How is it terminal ?
 <ᵇ-elim : {a b : ℕ } → (a <ᵇ b) ≡ true → suc a ≤ b
@@ -549,8 +546,12 @@ accepIfThenNoInterfere₂-TF-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂
                         → ⟦ e ⟧ₒₑ s₂ ≡ valₒ false 
                         → secₛₜ secᵥ' st₁ ≤ᵍ n≤⊤ l ≡ false
 
-accepIfThenNoInterfere₂-TF-st₁ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=true e₂=false = {!   !}
-
+accepIfThenNoInterfere₂-TF-st₁ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=true e₂=false = a<b∧b≤c⇒a<c {l} {secₒₑ secᵥ' e} {secₛₜ secᵥ' st₁} l<e e≤st₁ where
+  l<e : (secₒₑ secᵥ' e ≤ᵇ l) ≡ false
+  l<e = highLevelMayProduceDiff {e} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false
+  
+  e≤st₁ : n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₁ ≡ true
+  e≤st₁ = x≤y⊓ᵍz₁ {n≤⊤ (secₒₑ secᵥ' e)} {secₛₜ secᵥ' st₁} {secₛₜ secᵥ' st₂} acc-if 
 
 accepIfThenNoInterfere₂-TF-st₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
                         → s₁ [≡ l ] s₂  
@@ -559,7 +560,12 @@ accepIfThenNoInterfere₂-TF-st₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂
                         → ⟦ e ⟧ₒₑ s₂ ≡ valₒ false 
                         → secₛₜ secᵥ' st₂ ≤ᵍ n≤⊤ l ≡ false
 
-accepIfThenNoInterfere₂-TF-st₂ {e} {st₁} {st₂} s₁=ₗs₂ acc-if e₁=true e₂=false = {!   !}
+accepIfThenNoInterfere₂-TF-st₂ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=true e₂=false = a<b∧b≤c⇒a<c {l} {secₒₑ secᵥ' e} {secₛₜ secᵥ' st₂} l<e e≤st₂ where 
+  l<e : (secₒₑ secᵥ' e ≤ᵇ l) ≡ false
+  l<e = highLevelMayProduceDiff {e} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false
+  
+  e≤st₂ : n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₂ ≡ true
+  e≤st₂ = x≤y⊓ᵍz₂ {n≤⊤ (secₒₑ secᵥ' e)} {secₛₜ secᵥ' st₁} {secₛₜ secᵥ' st₂} acc-if 
 
 
 accepIfThenNoInterfere₂-FT-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
@@ -569,7 +575,12 @@ accepIfThenNoInterfere₂-FT-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂
                         → ⟦ e ⟧ₒₑ s₂ ≡ valₒ true 
                         → secₛₜ secᵥ' st₁ ≤ᵍ n≤⊤ l ≡ false
 
-accepIfThenNoInterfere₂-FT-st₁ {e} {st₁} {st₂} s₁=ₗs₂ acc-if e₁=false e₂=true = {!   !}
+accepIfThenNoInterfere₂-FT-st₁ {e} {st₁} {st₂}  {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=false e₂=true = a<b∧b≤c⇒a<c {l} {secₒₑ secᵥ' e} {secₛₜ secᵥ' st₁} l<e e≤st₁ where
+  l<e : (secₒₑ secᵥ' e ≤ᵇ l) ≡ false
+  l<e = highLevelMayProduceDiff {e} {s₂} {s₁} {l} (s[≡l]s'-sym s₁=ₗs₂) e₂=true e₁=false
+  
+  e≤st₁ : n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₁ ≡ true
+  e≤st₁ = x≤y⊓ᵍz₁ {n≤⊤ (secₒₑ secᵥ' e)} {secₛₜ secᵥ' st₁} {secₛₜ secᵥ' st₂} acc-if 
 
 accepIfThenNoInterfere₂-FT-st₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
                         → s₁ [≡ l ] s₂  
@@ -578,11 +589,17 @@ accepIfThenNoInterfere₂-FT-st₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂
                         → ⟦ e ⟧ₒₑ s₂ ≡ valₒ true 
                         → secₛₜ secᵥ' st₂ ≤ᵍ n≤⊤ l ≡ false
 
-accepIfThenNoInterfere₂-FT-st₂ {e} {st₁} {st₂} s₁=ₗs₂ acc-if e₁=false e₂=true = {!   !} 
+accepIfThenNoInterfere₂-FT-st₂ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=false e₂=true = a<b∧b≤c⇒a<c {l} {secₒₑ secᵥ' e} {secₛₜ secᵥ' st₂} l<e e≤st₂ where 
+  l<e : (secₒₑ secᵥ' e ≤ᵇ l) ≡ false
+  l<e = highLevelMayProduceDiff {e} {s₂} {s₁} {l} (s[≡l]s'-sym s₁=ₗs₂) e₂=true e₁=false
+  
+  e≤st₂ : n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₂ ≡ true
+  e≤st₂ = x≤y⊓ᵍz₂ {n≤⊤ (secₒₑ secᵥ' e)} {secₛₜ secᵥ' st₁} {secₛₜ secᵥ' st₂} acc-if 
 
 
 accpeWhileThenNoInterfere₁ : {e : bexp} {st : stmt} → accept (while e loop st) secᵥ' ≡ true → (accept st secᵥ' ≡ true)
-accpeWhileThenNoInterfere₁ acc-while = {!   !}
+accpeWhileThenNoInterfere₁ {e} {st} acc-while with accept st secᵥ'
+... | true = refl 
 
 accpeWhileThenNoInterfere₂ : {e : bexp} {st : stmt} {s₁ s₂ : state} {l : ℕ} 
                             → s₁ [≡ l ] s₂
@@ -591,7 +608,13 @@ accpeWhileThenNoInterfere₂ : {e : bexp} {st : stmt} {s₁ s₂ : state} {l : �
                             → ⟦ e ⟧ₒₑ s₂ ≡ valₒ false
                             → secₛₜ secᵥ' st ≤ᵍ n≤⊤ l ≡ false
 
-accpeWhileThenNoInterfere₂ = {!   !} 
+accpeWhileThenNoInterfere₂ {e} {st} {s₁} {s₂} {l} s₁=ₗs₂ acc e₁=true e₂=false = a<b∧b≤c⇒a<c {l} {secₒₑ secᵥ' e} {secₛₜ secᵥ' st} l<e e≤st where 
+  l<e : (secₒₑ secᵥ' e ≤ᵇ l) ≡ false
+  l<e = highLevelMayProduceDiff {e} {s₁} {s₂} {l} (s₁=ₗs₂) e₁=true e₂=false
+
+  e≤st : n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st ≡ true
+  e≤st with accept st secᵥ' 
+  ... | true = acc
 
 accepSeqThenNoInterfere₁ : { st₁ st₂ : stmt} → accept (st₁ ⍮ st₂) secᵥ' ≡ true → accept st₁ secᵥ' ≡ true
 accepSeqThenNoInterfere₁ acc-seq = ∧-elim₁ acc-seq
