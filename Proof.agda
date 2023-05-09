@@ -301,7 +301,7 @@ postulate
 
 
 true→false : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ true → (⟦ e ⟧ₒₑ s) ≡ valₒ false  
-true→false {e} {s} notb=true = {!   !}
+true→false {e} {s} notb=true = {!  !}
 
 -- operational semantics
 data ❴_❵_❴_❵ : state → stmt → state → Set where
@@ -360,10 +360,10 @@ s₁ [≡ l ] s₂ = ∀ {v : var} → secᵥ' v ≤ l → s₁ v ≡ s₂ v
 infix 4 _[≡_]_
 
 s[≡l]s'-trans : {l : ℕ} {s₁ s₂ s₃ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₃ → s₁ [≡ l ] s₃  
-s[≡l]s'-trans s₁[≡l]s₂ s₁[≡l]s₃ = {!   !}
+s[≡l]s'-trans {l} {s₁} {s₂} {s₃} s₁[≡l]s₂ s₂[≡l]s₃ {v} vsl≤l =  trans (s₁[≡l]s₂ {v} vsl≤l) (s₂[≡l]s₃ {v} vsl≤l)  
 
 s[≡l]s'-sym : {l : ℕ} {s₁ s₂ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₁
-s[≡l]s'-sym = {!   !}
+s[≡l]s'-sym {l} {s₁} {s₂} s₁[≡l]s₂ {v} vsl≤l = sym (s₁[≡l]s₂ {v} vsl≤l) 
 
 -- anti monotonicity of level
 anti-mono-veq : {l₁ l₂ : ℕ} {s₁ s₂ : state} → l₂ ≤ l₁ →  s₁ [≡ l₁ ] s₂ → s₁ [≡ l₂ ] s₂  
@@ -376,7 +376,11 @@ safe-evalₙₑ : {l : ℕ} {s₁ s₂ : state} {e : nexp} {v₁ v₂ : value}
             → v₁ ≡ ⟦ e ⟧ₙₑ s₁
             → v₂ ≡ ⟦ e ⟧ₙₑ s₂
             → v₁ ≡ v₂
-safe-evalₙₑ {l} {s₁} {s₂} {e} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = {!   !}            
+safe-evalₙₑ {l} {s₁} {s₂} {n-const x} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = trans ve₁ (sym ve₂)
+safe-evalₙₑ {l} {s₁} {s₂} {n-var x} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ =  trans (trans ve₁ (cong vb→n (s₁=ₗs₂ {x} e≤l))) (sym ve₂)
+safe-evalₙₑ {l} {s₁} {s₂} {n-add e₁ e₂} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = {!!}
+safe-evalₙₑ {l} {s₁} {s₂} {n-sub e₁ e₂} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = {!!}
+safe-evalₙₑ {l} {s₁} {s₂} {n-mul e₁ e₂} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = {!!}
 
 --  evaluation of boolean-expression of visible area always produces same result
 safe-evalₒₑ : {l : ℕ} {s₁ s₂ : state} {e : bexp} {v₁ v₂ : value}
@@ -398,8 +402,8 @@ safe-evalᵣₑ : {l : ℕ} {s₁ s₂ : state} {e : rexp} {v₁ v₂ : value}
 -- safe-eval {l} {s₁} {s₂} {x} {rbexp (b-const c)} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = trans ve₁ (sym ve₂)
 -- it requires proofing s₁ bv ≡ s₂ bv, thus we have to construct bv ≤ l, but agda is powerful, it is e≤l.
 -- safe-eval {l} {s₁} {s₂} {x} {rbexp (b-var bv)} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ rewrite s₁=ₗs₂ e≤l = trans ve₁ (sym ve₂)
-safe-evalᵣₑ {l} {s₁} {s₂} {rbexp be} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = safe-evalₒₑ {l} {s₁} {s₂} {be} {_} {_} s₁=ₗs₂ {!   !} {!   !} {!   !}
-safe-evalᵣₑ {l} {s₁} {s₂} {rnexp ne} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = safe-evalₙₑ {l} {s₁} {s₂} {ne} {_} {_} s₁=ₗs₂ {!   !} {!   !} {!   !}
+safe-evalᵣₑ {l} {s₁} {s₂} {rbexp be} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = safe-evalₒₑ {l} {s₁} {s₂} {be} {_} {_} s₁=ₗs₂  e≤l ve₁ ve₂  
+safe-evalᵣₑ {l} {s₁} {s₂} {rnexp ne} {v₁} {v₂} s₁=ₗs₂ e≤l ve₁ ve₂ = safe-evalₙₑ {l} {s₁} {s₂} {ne} {_} {_} s₁=ₗs₂  e≤l ve₁ ve₂   
 
 -- it is ok that a safe data write it to a visible area
 safe-write1 : {l : ℕ} {s₁ s₂ : state} {s₁' s₂' : state} {x : var} {e : rexp} {v₁ v₂ : value}
@@ -412,9 +416,9 @@ safe-write1 : {l : ℕ} {s₁ s₂ : state} {s₁' s₂' : state} {x : var} {e :
             → s₂' ≡ s₂ [ x ↦ v₂ ] 
             → s₁' [≡ l ] s₂'
 
-safe-write1 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ x≤l e≤l ve₁ ve₂ c₁ c₂ {y} y≤l with x == y 
-... | false rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} {!   !} {!   !} | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} {!   !} {!   !} = s₁=ₗs₂ y≤l
-... | true rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} {!   !} {!   !} | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} {!   !} {!   !} = safe-evalᵣₑ {l} {s₁} {s₂} {e} {_} {_} s₁=ₗs₂ {!   !} {!   !} {!   !}  
+safe-write1 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ x≤l e≤l ve₁ ve₂ c₁ c₂ {y} y≤l with x == y | inspect (x ==_) y
+... | false | [ x≠y ] rewrite s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} c₁ x≠y | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} c₂ x≠y = s₁=ₗs₂ y≤l
+... | true  | [ x=y ] rewrite s[x↦v]-elim₁ {s₁} {s₁'} {x} {y} {v₁} c₁ x=y | s[x↦v]-elim₁ {s₂} {s₂'} {x} {y} {v₂} c₂ x=y = safe-evalᵣₑ {l} {s₁} {s₂} {e} {_} {_} s₁=ₗs₂ e≤l ve₁ ve₂     
 
 postulate
   l-neq : {x : var} {y : var} → secᵥ' y < secᵥ' x → (x == y) ≡ false
@@ -430,8 +434,10 @@ safe-write2 : {l : ℕ} {s₁ s₂ : state} {s₁' s₂' : state} {x : var} {e :
             → s₂' ≡ s₂ [ x ↦ v₂ ] 
             → s₁' [≡ l ] s₂'
             
-safe-write2 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ l<x ve₁ ve₂ c₁ c₂ {y} y≤l 
-  rewrite l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x) | s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} {!   !} {!   !} | s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} {!   !} {!   !} = s₁=ₗs₂ y≤l  
+safe-write2 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂ l<x ve₁ ve₂ c₁ c₂ {y} y≤l rewrite
+  l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x) | s[x↦v]-elim₂ {s₁} {s₁'} {x} {y} {v₁} c₁ (l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x)) |
+  s[x↦v]-elim₂ {s₂} {s₂'} {x} {y} {v₂} c₂ (l-neq (≤-<-trans {secᵥ' y} {l} {secᵥ' x} y≤l l<x))
+  = s₁=ₗs₂ y≤l  
 
 postulate
   ¬≤ᵇ-elim : {a b : ℕ } → (a ≤ᵇ b) ≡ false → b < a
@@ -484,6 +490,9 @@ highLevelMayProduceDiff {b-less x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=t
 highLevelMayProduceDiff {b-eq x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = {!   !} 
 
 
+contradiction : {st : stmt} {l : ℕ} → (false ≡ true) → secₛₜ secᵥ' st ≤ᵍ n≤⊤ l ≡ false
+contradiction ()
+
 accepIfThenNoInterfere₂-TF-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
                         → s₁ [≡ l ] s₂  
                         → accept (if e then st₁ else st₂) secᵥ' ≡ true 
@@ -491,9 +500,9 @@ accepIfThenNoInterfere₂-TF-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂
                         → ⟦ e ⟧ₒₑ s₂ ≡ valₒ false 
                         → secₛₜ secᵥ' st₁ ≤ᵍ n≤⊤ l ≡ false
 
-accepIfThenNoInterfere₂-TF-st₁ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=true e₂=false with accept st₁ secᵥ' | accept st₂ secᵥ' |  n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₁ ⊓ᵍ secₛₜ secᵥ' st₂
-... | true | true | false = {!   !}
-... | true | true | true = {!   !}
+accepIfThenNoInterfere₂-TF-st₁ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=ₗs₂ acc-if e₁=true e₂=false with accept st₁ secᵥ' | accept st₂ secᵥ' |  n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₁ ⊓ᵍ secₛₜ secᵥ' st₂ | inspect (n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ_) (secₛₜ secᵥ' st₁ ⊓ᵍ secₛₜ secᵥ' st₂) 
+... | true | true | false | [ r ] rewrite r =  contradiction acc-if
+... | true | true | true | [ r ] = {!   !}
 
 
 accepIfThenNoInterfere₂-TF-st₂ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
