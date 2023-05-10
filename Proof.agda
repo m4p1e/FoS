@@ -1,7 +1,7 @@
 module Proof where
 
 open import Data.Nat using (ℕ; zero; suc; _+_ ; _∸_; _*_; _≤_; _≤ᵇ_; _<_; _⊔_; _⊓_; z≤n; s≤s; _<ᵇ_) renaming (_≟_ to _≟ₙ_)
-open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o)
+open import Data.Nat.Properties using (≤-trans; m≤m⊔n; m≤n⊔m; m⊔n≤o⇒m≤o; m⊔n≤o⇒n≤o; ≤ᵇ⇒≤)
 open import Data.String using (String; _≟_; _==_)
 open import Data.Bool using (Bool; true; false; not; _∧_ ; _∨_)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
@@ -317,10 +317,6 @@ nnbeval' f undef v₂ = undef
 ⟦ rbexp e ⟧ᵣₑ s = ⟦ e ⟧ₒₑ s
 ⟦ rnexp e ⟧ᵣₑ s = ⟦ e ⟧ₙₑ s
 
-postulate
-  eval-notfalse→true : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ false → (⟦ e ⟧ₒₑ s) ≡ valₒ true
-  eval-nottrue→false : {e : bexp} {s : state} → nbeval' not (⟦ e ⟧ₒₑ s) ≡ valₒ true → (⟦ e ⟧ₒₑ s) ≡ valₒ false
-
 -- operational semantics
 data ❴_❵_❴_❵ : state → stmt → state → Set where
   ❴_❵skip❴_❵ : 
@@ -377,12 +373,15 @@ s₁ [≡ l ] s₂ = ∀ {v : var} → secᵥ' v ≤ l → s₁ v ≡ s₂ v
 
 infix 4 _[≡_]_
 
+-- transitivity
 s[≡l]s'-trans : {l : ℕ} {s₁ s₂ s₃ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₃ → s₁ [≡ l ] s₃  
 s[≡l]s'-trans {l} {s₁} {s₂} {s₃} s₁[≡l]s₂ s₂[≡l]s₃ {v} vsl≤l =  trans (s₁[≡l]s₂ {v} vsl≤l) (s₂[≡l]s₃ {v} vsl≤l)  
 
+-- symmetry
 s[≡l]s'-sym : {l : ℕ} {s₁ s₂ : state} → s₁ [≡ l ] s₂ → s₂ [≡ l ] s₁
 s[≡l]s'-sym {l} {s₁} {s₂} s₁[≡l]s₂ {v} vsl≤l = sym (s₁[≡l]s₂ {v} vsl≤l) 
 
+-- reflexivity
 s[≡l]s'-refl : {l : ℕ} {s : state} → s [≡ l ] s
 s[≡l]s'-refl = λ _ → refl
 
@@ -457,7 +456,7 @@ safe-write1 {l} {s₁} {s₂} {s₁'} {s₂'} {x} {e} {v₁} {v₂} s₁=ₗs₂
 ... | true  | [ x=y ] rewrite s[x↦v]-elim₁ {s₁} {s₁'} {x} {y} {v₁} c₁ x=y | s[x↦v]-elim₁ {s₂} {s₂'} {x} {y} {v₂} c₂ x=y = safe-evalᵣₑ {l} {s₁} {s₂} {e} {_} {_} s₁=ₗs₂ e≤l ve₁ ve₂     
 
 postulate
-  l-neq : {x : var} {y : var} → secᵥ' y < secᵥ' x → (x == y) ≡ false
+  l-neq : {x : var} {y : var} → secᵥ' y < secᵥ' x → (x == y) ≡ false -- https://proofassistants.stackexchange.com/questions/2114/how-to-prove-f-x-f-y-%e2%86%92-x-%e2%89%a2-y
   ≤-<-trans : {x y z : ℕ} → x ≤ y → y < z → x < z
 
 -- it is non-interferential that a safe data write it to a visible area
@@ -486,7 +485,9 @@ safe-write3 {l} {s} {s'} {x} {e} {v} l<x ve c {y} y≤l rewrite l-neq (≤-<-tra
 
 postulate
   ¬≤ᵇ-elim : {a b : ℕ } → (a ≤ᵇ b) ≡ false → b < a
-  a<b∧b≤c⇒a<c : {a b : ℕ} {c : ℕ̃} → (b ≤ᵇ a) ≡ false → n≤⊤ b ≤ᵍ c ≡ true → c ≤ᵍ n≤⊤ a ≡ false 
+  a<b∧b≤c⇒a<c : {a b : ℕ} {c : ℕ̃} → (b ≤ᵇ a) ≡ false → n≤⊤ b ≤ᵍ c ≡ true → c ≤ᵍ n≤⊤ a ≡ false
+  a⊔b≤l⇒a≤l : {a b c : ℕ} →  (a ⊔ b ≤ᵇ c) ≡ true → (a ≤ c)
+  a⊔b≤l⇒b≤l : {a b c : ℕ} →  (a ⊔ b ≤ᵇ c) ≡ true → (b ≤ c)
 
 -- How is it terminal ?
 <ᵇ-elim : {a b : ℕ } → (a <ᵇ b) ≡ true → suc a ≤ b
@@ -512,12 +513,15 @@ accepIfThenNoInterfere₁ : {e : bexp} { st₁ st₂ : stmt} → accept (if e th
 accepIfThenNoInterfere₁ {e} {st₁} {st₂} acc-if with accept st₁ secᵥ' | accept st₂ secᵥ'
 ... | true | true = refl , refl
 
+-- absurd-helper
 constcon₁ : (valₒ false ≡ valₒ true) → true ≡ false
 constcon₁ ()
 
+-- absurd-helper
 constcon₂ : (valₒ true ≡ valₒ false) → true ≡ false
 constcon₂ ()
 
+-- different evaluation result for same expression only happend at high level for distinguishable states 
 highLevelMayProduceDiff : {e : bexp} {s₁ s₂ : state} {l : ℕ}
                         → s₁ [≡ l ] s₂
                         → ⟦ e ⟧ₒₑ s₁ ≡ valₒ true
@@ -529,16 +533,50 @@ highLevelMayProduceDiff {b-const true} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true 
 highLevelMayProduceDiff {b-var x} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with ((secᵥ' x) ≤ᵇ l) | inspect (secᵥ' x ≤ᵇ_) l
 ... | false | [ sx≰l ] = refl
 ... | true  | [ sx≤l ] rewrite s₁=ₗs₂ (≤ᵇ-elim sx≤l) = constcon₂ (trans (sym e₁=true) e₂=false)
-highLevelMayProduceDiff {b-not e} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = highLevelMayProduceDiff {e} {s₂} {s₁} (s[≡l]s'-sym s₁=ₗs₂) (eval-notfalse→true {e} {s₂} e₂=false) (eval-nottrue→false {e} {s₁} e₁=true)
-highLevelMayProduceDiff {b-or e₁ e₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = {!   !}
-highLevelMayProduceDiff {b-and e₁ e₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = {!   !}
-highLevelMayProduceDiff {b-less x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = {!   !}
-highLevelMayProduceDiff {b-eq x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false = {!   !} 
+highLevelMayProduceDiff {b-not e} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with secₒₑ secᵥ' e ≤ᵇ l | inspect (secₒₑ secᵥ' e ≤ᵇ_) l 
+... | false | [ e≰l ] = refl
+... | true  | [ e≤l ] = constcon₂ (trans (trans (sym e₁=true) (cong (nbeval' not) s₁e=s₂e)) e₂=false) where
+  s₁e=s₂e : ⟦ e ⟧ₒₑ s₁ ≡ ⟦ e ⟧ₒₑ s₂
+  s₁e=s₂e = safe-evalₒₑ {l} {s₁} {s₂} {e} {⟦ e ⟧ₒₑ s₁} {⟦ e ⟧ₒₑ s₂} s₁=ₗs₂ (≤ᵇ-elim e≤l) refl refl
+highLevelMayProduceDiff {b-or e₁ e₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with secₒₑ secᵥ' e₁ ⊔ secₒₑ secᵥ' e₂ ≤ᵇ l | inspect (secₒₑ secᵥ' e₁ ⊔ secₒₑ secᵥ' e₂ ≤ᵇ_) l
+... | false | [ e₁⊔e₂≰l ] = refl
+... | true  | [ e₁⊔e₂≤l ] = constcon₂ (trans (trans (sym e₁=true) (cong₂ (bbeval' _∨_) s₁e₁=s₂e₁ s₁e₂=s₂e₂)) e₂=false) where
+  s₁e₁=s₂e₁ : ⟦ e₁ ⟧ₒₑ s₁ ≡ ⟦ e₁ ⟧ₒₑ s₂
+  s₁e₁=s₂e₁ = safe-evalₒₑ {l} {s₁} {s₂} {e₁} {⟦ e₁ ⟧ₒₑ s₁} {⟦ e₁ ⟧ₒₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒a≤l {secₒₑ secᵥ' e₁} {secₒₑ secᵥ' e₂} {l} e₁⊔e₂≤l) refl refl
+  
+  s₁e₂=s₂e₂ : ⟦ e₂ ⟧ₒₑ s₁ ≡ ⟦ e₂ ⟧ₒₑ s₂
+  s₁e₂=s₂e₂ = safe-evalₒₑ {l} {s₁} {s₂} {e₂} {⟦ e₂ ⟧ₒₑ s₁} {⟦ e₂ ⟧ₒₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒b≤l {secₒₑ secᵥ' e₁} {secₒₑ secᵥ' e₂} {l} e₁⊔e₂≤l) refl refl
+highLevelMayProduceDiff {b-and e₁ e₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with secₒₑ secᵥ' e₁ ⊔ secₒₑ secᵥ' e₂ ≤ᵇ l | inspect (secₒₑ secᵥ' e₁ ⊔ secₒₑ secᵥ' e₂ ≤ᵇ_) l
+... | false | [ e₁⊔e₂≰l ] = refl
+... | true  | [ e₁⊔e₂≤l ] = constcon₂ (trans (trans (sym e₁=true) (cong₂ (bbeval' _∧_) s₁e₁=s₂e₁ s₁e₂=s₂e₂)) e₂=false) where
+  s₁e₁=s₂e₁ : ⟦ e₁ ⟧ₒₑ s₁ ≡ ⟦ e₁ ⟧ₒₑ s₂
+  s₁e₁=s₂e₁ = safe-evalₒₑ {l} {s₁} {s₂} {e₁} {⟦ e₁ ⟧ₒₑ s₁} {⟦ e₁ ⟧ₒₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒a≤l {secₒₑ secᵥ' e₁} {secₒₑ secᵥ' e₂} {l} e₁⊔e₂≤l) refl refl
+  
+  s₁e₂=s₂e₂ : ⟦ e₂ ⟧ₒₑ s₁ ≡ ⟦ e₂ ⟧ₒₑ s₂
+  s₁e₂=s₂e₂ = safe-evalₒₑ {l} {s₁} {s₂} {e₂} {⟦ e₂ ⟧ₒₑ s₁} {⟦ e₂ ⟧ₒₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒b≤l {secₒₑ secᵥ' e₁} {secₒₑ secᵥ' e₂} {l} e₁⊔e₂≤l) refl refl
+highLevelMayProduceDiff {b-less x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with secₙₑ secᵥ' x₁ ⊔ secₙₑ secᵥ' x₂ ≤ᵇ l | inspect (secₙₑ secᵥ' x₁ ⊔ secₙₑ secᵥ' x₂ ≤ᵇ_) l
+... | false | [ x₁⊔x₂≰l ] = refl
+... | true  | [ x₁⊔x₂≤l ] = constcon₂ (trans (trans (sym e₁=true) (cong₂ (nnbeval' _≤ᵇ_) s₁x₁=s₂x₁ s₁x₂=s₂x₂)) e₂=false) where
+  s₁x₁=s₂x₁ : ⟦ x₁ ⟧ₙₑ s₁ ≡ ⟦ x₁ ⟧ₙₑ s₂
+  s₁x₁=s₂x₁ = safe-evalₙₑ {l} {s₁} {s₂} {x₁} {⟦ x₁ ⟧ₙₑ s₁} {⟦ x₁ ⟧ₙₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒a≤l {secₙₑ secᵥ' x₁} {secₙₑ secᵥ' x₂} {l} x₁⊔x₂≤l) refl refl
+  
+  s₁x₂=s₂x₂ : ⟦ x₂ ⟧ₙₑ s₁ ≡ ⟦ x₂ ⟧ₙₑ s₂
+  s₁x₂=s₂x₂ = safe-evalₙₑ {l} {s₁} {s₂} {x₂} {⟦ x₂ ⟧ₙₑ s₁} {⟦ x₂ ⟧ₙₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒b≤l {secₙₑ secᵥ' x₁} {secₙₑ secᵥ' x₂} {l} x₁⊔x₂≤l) refl refl
 
+highLevelMayProduceDiff {b-eq x₁ x₂} {s₁} {s₂} {l} s₁=ₗs₂ e₁=true e₂=false with secₙₑ secᵥ' x₁ ⊔ secₙₑ secᵥ' x₂ ≤ᵇ l | inspect (secₙₑ secᵥ' x₁ ⊔ secₙₑ secᵥ' x₂ ≤ᵇ_) l
+... | false | [ x₁⊔x₂≰l ] = refl
+... | true  | [ x₁⊔x₂≤l ] = constcon₂ (trans (trans (sym e₁=true) (cong₂ (nnbeval' =') s₁x₁=s₂x₁ s₁x₂=s₂x₂)) e₂=false) where
+  s₁x₁=s₂x₁ : ⟦ x₁ ⟧ₙₑ s₁ ≡ ⟦ x₁ ⟧ₙₑ s₂
+  s₁x₁=s₂x₁ = safe-evalₙₑ {l} {s₁} {s₂} {x₁} {⟦ x₁ ⟧ₙₑ s₁} {⟦ x₁ ⟧ₙₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒a≤l {secₙₑ secᵥ' x₁} {secₙₑ secᵥ' x₂} {l} x₁⊔x₂≤l) refl refl
+  
+  s₁x₂=s₂x₂ : ⟦ x₂ ⟧ₙₑ s₁ ≡ ⟦ x₂ ⟧ₙₑ s₂
+  s₁x₂=s₂x₂ = safe-evalₙₑ {l} {s₁} {s₂} {x₂} {⟦ x₂ ⟧ₙₑ s₁} {⟦ x₂ ⟧ₙₑ s₂} s₁=ₗs₂ (a⊔b≤l⇒b≤l {secₙₑ secᵥ' x₁} {secₙₑ secᵥ' x₂} {l} x₁⊔x₂≤l) refl refl
 
+-- absurd-helper
 contradiction : {st : stmt} {l : ℕ} → (false ≡ true) → secₛₜ secᵥ' st ≤ᵍ n≤⊤ l ≡ false
 contradiction ()
 
+-- different evaluation result for if-stmt only happend at high level for distinguishable states
 accepIfThenNoInterfere₂-TF-st₁ : {e : bexp} { st₁ st₂ : stmt} {s₁ s₂ : state} {l : ℕ}
                         → s₁ [≡ l ] s₂  
                         → (n≤⊤ (secₒₑ secᵥ' e) ≤ᵍ secₛₜ secᵥ' st₁ ⊓ᵍ secₛₜ secᵥ' st₂) ≡ true
@@ -597,10 +635,12 @@ accepIfThenNoInterfere₂-FT-st₂ {e} {st₁} {st₂} {s₁} {s₂} {l} s₁=�
   e≤st₂ = x≤y⊓ᵍz₂ {n≤⊤ (secₒₑ secᵥ' e)} {secₛₜ secᵥ' st₁} {secₛₜ secᵥ' st₂} acc-if 
 
 
+-- eliminator of accpet while 
 accpeWhileThenNoInterfere₁ : {e : bexp} {st : stmt} → accept (while e loop st) secᵥ' ≡ true → (accept st secᵥ' ≡ true)
 accpeWhileThenNoInterfere₁ {e} {st} acc-while with accept st secᵥ'
 ... | true = refl 
 
+-- different evaluation result for while-stmt only happend at high level for distinguishable states
 accpeWhileThenNoInterfere₂ : {e : bexp} {st : stmt} {s₁ s₂ : state} {l : ℕ} 
                             → s₁ [≡ l ] s₂
                             → accept (while e loop st) secᵥ' ≡ true 
@@ -616,9 +656,10 @@ accpeWhileThenNoInterfere₂ {e} {st} {s₁} {s₂} {l} s₁=ₗs₂ acc e₁=tr
   e≤st with accept st secᵥ' 
   ... | true = acc
 
+-- eliminator of accpet seq
 accepSeqThenNoInterfere₁ : { st₁ st₂ : stmt} → accept (st₁ ⍮ st₂) secᵥ' ≡ true → accept st₁ secᵥ' ≡ true
 accepSeqThenNoInterfere₁ acc-seq = ∧-elim₁ acc-seq
-
+-- eliminator of accpet seq
 accepSeqThenNoInterfere₂ : { st₁ st₂ : stmt} → accept (st₁ ⍮ st₂) secᵥ' ≡ true → accept st₂ secᵥ' ≡ true
 accepSeqThenNoInterfere₂ acc-seq = ∧-elim₂ acc-seq
 
@@ -713,7 +754,7 @@ corollary₁ {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ st₁ st₂ acc₁ acc₂  l
 
 
 
--- The final theorem, no interfere
+-- The final theorem, no interfere for distinguishable initial states.
 theorem : {l : ℕ}
           → (s₁ : state) → (s₁' : state)
           → (s₂ : state) → (s₂' : state)
@@ -724,13 +765,14 @@ theorem : {l : ℕ}
           → ❴ s₂ ❵ st ❴ s₂' ❵
           → s₁' [≡ l ] s₂'
 
-
+-- trivial proof
 theorem s₁ s₁ s₂ s₂ s₁=ₗs₂ 
   skip acc 
   (❴ s₁ ❵skip❴ s₁' ❵ c₁) 
   (❴ s₂ ❵skip❴ s₂' ❵ c₂) 
   = s₁=ₗs₂
-  
+
+-- consider two cases, accroding to level of left-variable.  
 theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ 
   (lvar x := e) acc 
   (❴ s₁ ❵assign❴ s₁' ❵ c₁) 
@@ -755,7 +797,8 @@ theorem s₁ s₁' s₂ s₂' s₁=ₗs₂
   (❴ s₂ ❵if-false❴ s₂' ❵ e=false₂ c₂) 
   = theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ st₂ (proj₂ (accepIfThenNoInterfere₁ {e} {st₁} {st₂} acc)) c₁ c₂
 
--- if-true and if-false or if-false and if-true, we have to prove l < secᵥ' e   
+-- if-true and if-false or if-false and if-true, we have to prove l < secᵥ' e, then accepted if gives e ≤ st₁ ⊓ st₁. 
+-- finally, we have l < st₁ and l < st₂, then prove the case by corollary₁
 theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ 
   (if e then st₁ else st₂) acc 
   (❴ s₁ ❵if-true❴ s₁' ❵ e=true₁ c₁) 
@@ -796,6 +839,8 @@ theorem s₁ s₁' s₂ s₂' s₁=ₗs₂
   (❴ s₂ ❵while-false❴ s₂' ❵ e=false₂ s₂⇒s₂') rewrite s₁⇒s₁' | s₂⇒s₂'
   = s₁=ₗs₂
 
+-- we have to prove l < secᵥ' e, then accepted while gives e ≤ st. 
+-- finally, we have l < st, then prove the case by lemma₁
 theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂ 
   (while e loop st) acc 
   (❴ s₁ ❵while-true❴ s₁' ❵ e=true₁ s₁⇒sₜ sₜ⇒s₁')
@@ -845,10 +890,11 @@ theorem {l} s₁ s₁' s₂ s₂' s₁=ₗs₂
       s₁'v=s₂v : s₁' v ≡ s₂ v
       s₁'v=s₂v rewrite s₁⇒s₁' = s₁=ₗs₂ {v} v≤l
 
+-- rescurisve case
 theorem s₁ s₁' s₂ s₂' s₁=ₗs₂ 
   (st₁ ⍮ st₂) acc 
   (❴ s₁ ❵seq❴ s₁' ❵ s₁⇒sₜ sₜ⇒s₁') 
   (❴ s₂ ❵seq❴ s₂' ❵ s₂⇒sₜ sₜ⇒s₂') 
   = theorem _ s₁' _ s₂' (
       theorem s₁ _ s₂ _ s₁=ₗs₂ st₁ (accepSeqThenNoInterfere₁ {st₁} {st₂} acc) s₁⇒sₜ s₂⇒sₜ
-  ) st₂ ((accepSeqThenNoInterfere₂ {st₁} {st₂} acc)) sₜ⇒s₁' sₜ⇒s₂'
+  ) st₂ ((accepSeqThenNoInterfere₂ {st₁} {st₂} acc)) sₜ⇒s₁' sₜ⇒s₂' 
