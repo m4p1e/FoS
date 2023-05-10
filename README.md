@@ -1,2 +1,2 @@
 # FoS
-Formalization of Security
+Formalization of Lattice based Security Information Flow Analysis
